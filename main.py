@@ -4,7 +4,7 @@ It was created to try and learn how to use the MySQL database.
 """
 
 from random import randint
-import inspect
+from inspect import cleandoc
 from time import sleep
 import sys
 import mysql.connector
@@ -34,7 +34,8 @@ class Casino:
                 3: Exit.
                 """
         while True:
-            print(inspect.cleandoc(menu))
+            print("\n"*5)
+            print(cleandoc(menu))
             # Loop until user enters a valid choice.
             choice = input("Enter your choice: ")
             if choice == "1":
@@ -52,6 +53,7 @@ class Casino:
         The password will be encrypted and store in the SQL server with the username.
         Balance will be set to 1000 as default.
         """
+        print("\n"*5)
         # Register a new user.
         print("Please register")
         username = input("Enter your username: ")
@@ -59,9 +61,11 @@ class Casino:
 
         # Check if username is already taken.
         if not Casino.check_username(self, username):
+            sleep(2)
             return
 
         if not Casino.check_password(self, password):
+            sleep(2)
             return
 
         # Get user_id by len of user_id length.
@@ -73,7 +77,6 @@ class Casino:
         cursor.execute(query, (username, cryptocode.encrypt(password, KEY), 1000, user_id))
         conn.commit()
         print("User registered!")
-        print("\n"*5)
 
     def login(self):
         """
@@ -83,8 +86,9 @@ class Casino:
         Check if it matches the password the user entered.
         Next set the username, user_id, and balance to the class variables.
         """
-        print("Please login")
         while True:
+            print("\n"*5)
+            print("Please login")
             username = input("Enter your username: ")
             password = input("Enter your password: ")
             # Find username in database.
@@ -95,11 +99,13 @@ class Casino:
             # If username is not found.
             if user is None:
                 print("User or/and password is incorrect!")
+                sleep(2)
                 return
 
             # Compare inputted password with the password in the database.
             if password != cryptocode.decrypt(user[1], KEY):
                 print("User or/and password is incorrect!")
+                sleep(2)
                 return
 
             # If username and password is correct.
@@ -124,29 +130,24 @@ class Casino:
             6: Exit.
             """
         while True:
-            print("\n"*10)
+            print("\n"*5)
             self.balance = Casino.read_balance(self)
             print(f"Hello {self.username}! Your balance is ${self.balance}")
-            print(inspect.cleandoc(game_menu))
+            print(cleandoc(game_menu))
             choice = input("Enter your choice: ")
             if choice == "1":
-                print("\n"*5)
                 Casino.scratch_card(self)
 
             elif choice == "2":
-                print("\n"*5)
                 Casino.roulette(self)
 
             elif choice == "3":
-                print("\n"*5)
                 Casino.blackjack(self)
 
             elif choice == "4":
-                print("\n"*5)
                 Casino.dices(self)
 
             elif choice == "5":
-                print("\n"*5)
                 Casino.settings(self)
 
             elif choice == "6":
@@ -161,6 +162,7 @@ class Casino:
         Depening on the how many symbols line up the multiplier will differ.
         """
         while True:
+            print("\n"*5)
             print("1: Place bet.\n2: Rules.\n3: Exit.")
             choice = input("Enter your choice: ")
             if choice == "1":
@@ -205,10 +207,12 @@ class Casino:
                 If you have the same symbols, you will win 50 times your bet.
                 If you have 3 of the same symbols, you will win 25 times your bet.
                 If you have 2 of the same symbols, you will win 0.5 times your bet."""
-                print(inspect.cleandoc(rules))
+                print(cleandoc(rules))
 
             elif choice == "3":
                 return
+
+            sleep(2)
 
     def roulette(self):
         """
@@ -219,6 +223,7 @@ class Casino:
         If you guess the right number you win 36x your bet.
         """
         while True:
+            print("\n"*5)
             print("1: Place bet.\n2: Rules.\n3: Exit.")
             choice = input("Enter your choice: ")
             if choice == "1":
@@ -249,10 +254,12 @@ class Casino:
                 Place a bet and you will receive a roulette.
                 The roulette will have 36 numbers.
                 If you guess the number, you will receive your bet multiplied by 36."""
-                print(inspect.cleandoc(rules))
+                print(cleandoc(rules))
 
             elif choice == "3":
                 break
+
+            sleep(2)
 
     def blackjack(self):
         """
@@ -268,6 +275,7 @@ class Casino:
         You win 6x your bet.
         """
         while True:
+            print("\n"*5)
             print("1: Place bet.\n2: Rules.\n3: Exit.")
             choice = input("Enter your choice: ")
             if choice == "1":
@@ -287,16 +295,19 @@ class Casino:
                 rules = """Rules for dices:
                 Place a bet and roll the dice!
                 If you roll the same number, you will win 6 times your bet."""
-                print(inspect.cleandoc(rules))
+                print(cleandoc(rules))
 
             elif choice == "3":
                 break
+
+        sleep(2)
 
     def coinflip(self):
         """
         Coinflip.
         """
         while True:
+            print("\n"*5)
             print("1: Place bet.\n2: Rules.\n3: Exit.")
             choice = input("Enter your choice: ")
             if choice == "1":
@@ -330,10 +341,12 @@ class Casino:
                 Place a bet and you will receive a coinflip.
                 The coinflip will have 2 numbers.
                 If you guess the number, you will win 2x of your bet."""
-                print(inspect.cleandoc(rules))
+                print(cleandoc(rules))
 
             elif choice == "3":
                 break
+
+            sleep(2)
 
     def settings(self):
         """
@@ -344,44 +357,39 @@ class Casino:
         Reset balance can be used if you dont have any money left.
         """
         while True:
+            print("\n"*5)
             print("1: Change username.\n2: Change password.\n3: Reset Balance.\n4: Exit.")
             choice = input("Enter your choice: ")
             if choice == "1":
-                # Change username.
                 new_username = input("Enter your new username: ")
-                # Check if username already exists.
-                if not Casino.check_username(self, new_username):
-                    continue
-
-                # Change the username.
-                query = "UPDATE users SET username = %s WHERE username = %s"
-                cursor.execute(query, (new_username, self.user_id))
-                conn.commit()
-                self.username = new_username
-                print("Your username has been changed!")
+                if Casino.change_username(self, new_username) is not None:
+                    self.username = new_username
+                    print("Your username has been changed!")
 
             elif choice == "2":
                 # Change password.
                 new_password = input("Enter your new password: ")
-                # Check if the password is valid.
-                if not Casino.check_password(self, new_password):
-                    continue
-
-                query = "UPDATE users SET password = %s WHERE user_id = %s"
-                cursor.execute(query, (cryptocode.encrypt(self, new_password), self.user_id))
-                conn.commit()
-                print("Your password has been changed!")
+                if Casino.change_password(self, new_password) is not None:
+                    print("Your password has been changed!")
 
             elif choice == "3":
                 # Reset balance.
                 new_balance = 1000
-                query = "UPDATE users SET balance = %s WHERE user_id = %s"
-                cursor.execute(query, (new_balance, self.user_id))
-                conn.commit()
+                try:
+                    # Change the balance.
+                    query = "UPDATE users SET balance = %s WHERE user_id = %s"
+                    cursor.execute(query, (new_balance, self.user_id))
+                    conn.commit()
+                except mysql.connector.Error:
+                    print("Something went wrong! Balance has been updated locally.")
+                    self.balance = new_balance
+                    continue
                 print("Your balance has been reset!")
 
             elif choice == "4":
                 return
+
+            sleep(2)
 
     def bet_func(self):
         """
@@ -408,9 +416,13 @@ class Casino:
 
             # Update the balance.
             new_balance = self.balance - bet
-            query = "UPDATE users SET balance = %s WHERE user_id = %s"
-            cursor.execute(query, (new_balance, self.user_id))
-            conn.commit()
+            try:
+                # Update the balance.
+                query = "UPDATE users SET balance = %s WHERE user_id = %s"
+                cursor.execute(query, (new_balance, self.user_id))
+                conn.commit()
+            except mysql.connector.Error:
+                self.balance = new_balance
             return bet
 
     def check_bet(self, bet):
@@ -446,10 +458,14 @@ class Casino:
         print(f"You won ${bet * multiplier}!")
         # Multiply the bet by the multiplier and add to balance.
         new_balance = self.balance + (bet * multiplier)
-        # Update the balance in SQL.
-        query = "UPDATE users SET balance = %s WHERE user_id = %s"
-        cursor.execute(query, (new_balance, self.user_id))
-        conn.commit()
+        try:
+            # Update the balance in SQL.
+            query = "UPDATE users SET balance = %s WHERE user_id = %s"
+            cursor.execute(query, (new_balance, self.user_id))
+            conn.commit()
+        except mysql.connector.Error:
+            print("Something went wrong! Balance has been updated locally.")
+            self.balance = new_balance
 
     def bet_lost(self, bet):
         """
@@ -463,22 +479,78 @@ class Casino:
         Send query to the SQL database with the user_id.
         Return the received balance.
         """
-        # Read the balance from SQL and return it.
-        query = "SELECT balance FROM users WHERE user_id = %s"
-        cursor.execute(query, (self.user_id,))
-        return cursor.fetchone()[0]
+        try:
+            # Read the balance from SQL and return it.
+            query = "SELECT balance FROM users WHERE user_id = %s"
+            cursor.execute(query, (self.user_id,))
+            return cursor.fetchone()[0]
+        except mysql.connector.Error:
+            return self.balance
+
+    def change_username(self, new_username):
+        """
+        Function to change the username.
+        First check the username in the check_username function.
+        If the username is valid, send query to the SQL database with the new username.
+        Return the new username.
+        """
+        # Check if username already exists.
+        if not Casino.check_username(self, new_username):
+            return None
+        try:
+            # Change the username.
+            query = "UPDATE users SET username = %s WHERE user_id = %s"
+            cursor.execute(query, (new_username, self.user_id))
+            conn.commit()
+        except mysql.connector.Error:
+            print("Something went wrong!")
+            return None
+        return new_username
 
     def check_username(self, username):
         """
         Function to check if the username is already in the database.
+        First check if username is longer than 3 characters.
+        Then send query to the SQL database with the username.
+        Return True if username is not in the database.
         """
-        query = "SELECT * FROM users WHERE username = %s"
-        cursor.execute(query, (username,))
-        user = cursor.fetchone()
-        if user is not None:
-            print("Username is already taken!")
+        if len(username) < 3:
+            print("Username is too short!")
+            return False
+        try:
+            query = "SELECT * FROM users WHERE username = %s"
+            cursor.execute(query, (username,))
+            user = cursor.fetchone()
+            if user is not None:
+                print("Username is already taken!")
+                return False
+        except mysql.connector.Error:
+            print("Something went wrong!")
             return False
         return True
+
+    def change_password(self, new_password):
+        """
+        Function to change the password.
+        First check the password in the check_password function.
+        Then encrypt the password.
+        Then send query to the SQL database with the new password.
+        Return the new password.
+        """
+        # Check if the password is valid.
+        if not Casino.check_password(self, new_password):
+            return None
+        # Encrypt the password.
+        new_password = cryptocode.encrypt(new_password, KEY)
+        try:
+            # Change the password.
+            query = "UPDATE users SET password = %s WHERE user_id = %s"
+            cursor.execute(query, (new_password, self.user_id))
+            conn.commit()
+        except mysql.connector.Error:
+            print("Something went wrong!")
+            return None
+        return new_password
 
     def check_password(self, password):
         """
@@ -513,7 +585,6 @@ def connection():
         except mysql.connector.Error:
             print("Failed to connect to the database. Retrying...")
         sleep(2)
-
     sys.exit()
 
 if __name__ == "__main__":
