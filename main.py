@@ -42,12 +42,13 @@ class Casino:
                 Casino.login(self)
 
             elif choice == "2":
-                Casino.register(self)
+                Casino.register()
 
             elif choice == "3":
                 break
 
-    def register(self):
+    @staticmethod
+    def register():
         """
         Function to register a new user.
         The password will be encrypted and store in the SQL server with the username.
@@ -58,22 +59,23 @@ class Casino:
         print("Please register")
         username = input("Enter your username: ")
         password = input("Enter your password: ")
+        confirm_password = input("Confirm your password: ")
 
         # Check if username is already taken.
-        if not Casino.check_username(self, username):
+        if not Casino.check_username(username):
             sleep(2)
             return
 
-        if not Casino.check_password(self, password):
+        if not Casino.check_password(password, confirm_password):
             sleep(2)
             return
 
         # Get user_id by len of user_id length.
-        cursor.execute("SELECT * FROM users")
+        cursor.execute("SELECT * FROM user_table")
         user_id = len(cursor.fetchall())
 
         # Insert new user into database.
-        query = "INSERT INTO users (username, password, balance, user_id) VALUES (%s, %s, %s, %s)"
+        query = "INSERT INTO user_table (username, password, balance, user_id) VALUES (%s, %s, %s, %s)"
         cursor.execute(query, (username, cryptocode.encrypt(password, KEY), 1000, user_id))
         conn.commit()
         print("User registered!")
@@ -92,7 +94,7 @@ class Casino:
             username = input("Enter your username: ")
             password = input("Enter your password: ")
             # Find username in database.
-            query = "SELECT * FROM users WHERE username = %s"
+            query = "SELECT * FROM user_table WHERE username = %s"
             cursor.execute(query, (username,))
             user = cursor.fetchone()
 
@@ -142,7 +144,7 @@ class Casino:
                 Casino.roulette(self)
 
             elif choice == "3":
-                Casino.blackjack(self)
+                Casino.blackjack()
 
             elif choice == "4":
                 Casino.dices(self)
@@ -198,7 +200,7 @@ class Casino:
                     continue
 
                 # If none of the above.
-                Casino.bet_lost(self, bet)
+                Casino.bet_lost(bet)
 
             elif choice == "2":
                 rules = """Rules for scratch cards:
@@ -247,7 +249,7 @@ class Casino:
                     continue
 
                 # If the guess is incorrect.
-                Casino.bet_lost(self, bet)
+                Casino.bet_lost(bet)
 
             elif choice == "2":
                 rules = """Rules for roulette:
@@ -261,7 +263,8 @@ class Casino:
 
             sleep(2)
 
-    def blackjack(self):
+    @staticmethod
+    def blackjack():
         """
         Play blackjack.
         """
@@ -289,7 +292,7 @@ class Casino:
                     Casino.bet_won(self, bet, 6)
                     continue
                 # If d1 and d2 are not equal.
-                Casino.bet_lost(self,bet)
+                Casino.bet_lost(bet)
 
             elif choice == "2":
                 rules = """Rules for dices:
@@ -334,7 +337,7 @@ class Casino:
                     continue
 
                 # If number is 1.
-                Casino.bet_lost(self, bet)
+                Casino.bet_lost(bet)
 
             elif choice == "2":
                 rules = """Rules for coinflip:
@@ -369,7 +372,8 @@ class Casino:
             elif choice == "2":
                 # Change password.
                 new_password = input("Enter your new password: ")
-                if Casino.change_password(self, new_password) is not None:
+                confirm_password = input("Confirm your new password: ")
+                if Casino.change_password(self, new_password, confirm_password) is not None:
                     print("Your password has been changed!")
 
             elif choice == "3":
@@ -467,7 +471,8 @@ class Casino:
             print("Something went wrong! Balance has been updated locally.")
             self.balance = new_balance
 
-    def bet_lost(self, bet):
+    @staticmethod
+    def bet_lost(bet):
         """
         Function for if bet was lost.
         """
@@ -481,7 +486,7 @@ class Casino:
         """
         try:
             # Read the balance from SQL and return it.
-            query = "SELECT balance FROM users WHERE user_id = %s"
+            query = "SELECT balance FROM user_table WHERE user_id = %s"
             cursor.execute(query, (self.user_id,))
             return cursor.fetchone()[0]
         except mysql.connector.Error:
@@ -495,10 +500,11 @@ class Casino:
         Return the new username.
         """
         # Check if username already exists.
-        if not Casino.check_username(self, new_username):
+        if not Casino.check_username(new_username):
             return None
+
+        # Change the username.
         try:
-            # Change the username.
             query = "UPDATE users SET username = %s WHERE user_id = %s"
             cursor.execute(query, (new_username, self.user_id))
             conn.commit()
@@ -507,7 +513,32 @@ class Casino:
             return None
         return new_username
 
-    def check_username(self, username):
+    def change_password(self, new_password, confirm_password):
+        """
+        Function to change the password.
+        First check the password in the check_password function.
+        Then encrypt the password.
+        Then send query to the SQL database with the new password.
+        Return the new password.
+        """
+        # Check if the password is valid.
+        if not Casino.check_password(new_password, confirm_password):
+            return None
+        # Encrypt the password.
+        new_password = cryptocode.encrypt(new_password, KEY)
+
+        # Change the password.
+        try:
+            query = "UPDATE users SET password = %s WHERE user_id = %s"
+            cursor.execute(query, (new_password, self.user_id))
+            conn.commit()
+        except mysql.connector.Error:
+            print("Something went wrong!")
+            return None
+        return new_password
+
+    @staticmethod
+    def check_username(username):
         """
         Function to check if the username is already in the database.
         First check if username is longer than 3 characters.
@@ -518,7 +549,7 @@ class Casino:
             print("Username is too short!")
             return False
         try:
-            query = "SELECT * FROM users WHERE username = %s"
+            query = "SELECT * FROM user_table WHERE username = %s"
             cursor.execute(query, (username,))
             user = cursor.fetchone()
             if user is not None:
@@ -529,35 +560,18 @@ class Casino:
             return False
         return True
 
-    def change_password(self, new_password):
-        """
-        Function to change the password.
-        First check the password in the check_password function.
-        Then encrypt the password.
-        Then send query to the SQL database with the new password.
-        Return the new password.
-        """
-        # Check if the password is valid.
-        if not Casino.check_password(self, new_password):
-            return None
-        # Encrypt the password.
-        new_password = cryptocode.encrypt(new_password, KEY)
-        try:
-            # Change the password.
-            query = "UPDATE users SET password = %s WHERE user_id = %s"
-            cursor.execute(query, (new_password, self.user_id))
-            conn.commit()
-        except mysql.connector.Error:
-            print("Something went wrong!")
-            return None
-        return new_password
-
-    def check_password(self, password):
+    @staticmethod
+    def check_password(password, confirm_password):
         """
         Function to check if the password is valid.
         """
-        if len(password) < 8:
-            print("Password must be at least 8 characters long!")
+        # Check if the password matches the confirm password.
+        if password != confirm_password:
+            print("Passwords don't match!")
+            return False
+
+        if len(password) < 5:
+            print("Password must be at least 5 characters long!")
             return False
 
         if not any(char.isdigit() for char in password):
@@ -572,7 +586,7 @@ def connection():
     If it fails, it will try to connect again 5 times.
     If it still fails, it will exit the program.
     """
-    # Try and connect to the database.
+    # Try and connect to the database 5 times.
     for _ in range(5):
         try:
             database = mysql.connector.connect(user=SQL_VARS.USER,
