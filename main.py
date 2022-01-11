@@ -3,7 +3,7 @@ Casino program that I made for my own use.
 It was created to try and learn how to use the MySQL database.
 """
 
-from random import randint
+from random import randint, shuffle
 from inspect import cleandoc
 from time import sleep
 import sys
@@ -263,12 +263,197 @@ class Casino:
 
             sleep(2)
 
-    @staticmethod
-    def blackjack():
+    def blackjack(self):
         """
         Play blackjack.
         """
-        print("Blackjack is not implemented yet!")
+        while True:
+            print("\n"*5)
+            print("1: Place bet.\n2: Rules.\n3: Exit.")
+            choice = input("Enter your choice: ")
+            print("\n"*5)
+            if choice == "1":
+                # Place bet.
+                bet = Casino.bet_func(self)
+
+                # Create deck.
+                values = {'Two':2, 'Three':3, 'Four':4, 'Five':5, 'Six':6, 'Seven':7, 'Eight':8, 'Nine':9, 'Ten':10, 'Jack':10,
+                        'Queen':10, 'King':10, 'Ace':11}
+                playing = True
+
+                # Create a deck of cards.
+                class Deck:
+                    def __init__(self):
+                        suits = ('Hearts', 'Diamonds', 'Spades', 'Clubs')
+                        ranks = ('Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Jack', 'Queen', 'King', 'Ace')
+                        self.deck = []  # start with an empty list#
+                        for suit in suits:
+                            for rank in ranks:
+                                self.deck.append(Card(suit, rank))
+
+                    def __str__(self):
+                        deck_comp = '' #strating competition deck empty#
+                        for card in self.deck:
+                            deck_comp += '\n' + card.__str__() #add each card object;s strin#
+                        return 'The deck has' + deck_comp
+                            
+                    def shuffle(self):
+                        shuffle(self.deck)
+                        
+                    def deal(self):
+                        single_card = self.deck.pop()
+                        return single_card
+
+                # Create a card class.
+                class Card:
+                    def __init__(self, suit, rank):
+                        self.suit = suit
+                        self.rank = rank
+
+                    def __str__(self):
+                        return self.rank + ' of ' + self.sui
+
+                
+                class Hand:
+                    def __init__(self):
+                        self.cards = []  # start with an empty list as we did in the Deck class
+                        self.value = 0   # start with zero value
+                        self.aces = 0    # add an attribute to keep track of aces
+                    
+                    # Here we add cards to the hand.
+                    def add_card(self,card):
+                        self.cards.append(card)
+                        self.value += values[card.rank]
+                        if card.rank == 'Ace':
+                            self.aces += 1
+                    
+                    # Here we check if the hand has an ace and if it does, check if it can be reduced to a 1.
+                    def adjust_for_ace(self):
+                        while self.value > 21 and self.aces:
+                            self.value -= 10
+                            self.aces -= 1
+
+                # Hit - take another card.
+                def hit(deck, hand):
+                    hand.add_card(deck.deal())
+                    hand.adjust_for_ace()
+
+                # Func for hit or stand.
+                def hit_or_stand(deck, hand):
+                    global playing
+                    while True:
+                        x = input("Would you like to [h]it or [s]tand?\n")
+                        if x.lower() == 'h' or x.lower() == 'hit':
+                            hit(deck,hand)  # hit() function defined above
+                        elif x.lower() == 's' or x.lower() == 'stand':
+                            print("Player stands. Dealer is playing.")
+                            sleep(1)
+                            playing = False
+                        else:
+                            print("Sorry, please try again.")
+                            continue
+                        break
+
+                # Show cards.
+                def show_some(player, dealer):
+                    print("\n"*5)
+                    dealer_hand = f""" 
+                    Dealer's Hand:
+                    {dealer.cards[0]}
+                    <Hidden card>
+                    Value: {values.get(dealer.cards[0].rank)}
+                    """
+
+                    print(cleandoc(dealer_hand))
+                    print("\n")
+                    print("Player's Hand: ", *player.cards, sep='\n')
+                    print(f"Value: {player.value}")
+                    sleep(2)
+                        
+                # Show all cards.
+                def show_all(player,dealer):
+                    print("\n"*5)
+                    print("Dealer's Hand: ", *dealer.cards, sep= '\n')
+                    print(f"Value: {dealer.value}")
+                    print("\n")
+                    print("Player's Hand: ", *player.cards, sep= '\n')
+                    print(f"Value: {player.value}")
+                    print("\n")
+                    sleep(2)
+
+                while True:
+                    # Create & shuffle the deck, deal two cards to each player
+                    deck = Deck()
+                    deck.shuffle()
+                    
+                    player_hand = Hand()
+                    player_hand.add_card(deck.deal())
+                    player_hand.add_card(deck.deal())
+                    
+                    dealer_hand = Hand()
+                    dealer_hand.add_card(deck.deal())
+                    dealer_hand.add_card(deck.deal())
+                                
+                    # Show cards (but keep one dealer card hidden)
+                    show_some(player_hand, dealer_hand)
+                    
+                    while playing:  # recall this variable from our hit_or_stand function
+                        sleep(2)
+                        # Prompt for Player to Hit or Stand
+                        hit_or_stand(deck, player_hand)
+                        
+                        # Show cards (but keep one dealer card hidden)
+                        show_some(player_hand,dealer_hand) 
+                        
+                        # If player's hand exceeds 21, run player_busts() and break out of loop
+                        if player_hand.value > 21:
+                            Casino.bet_lost(self)
+                            break
+
+                        if player_hand.value == 21:
+                            Casino.bet_won(self, bet, 2)
+                            break
+
+                        # If Player hasn't busted, play Dealer's hand until Dealer reaches 17
+                        if player_hand.value < 21:
+                            while dealer_hand.value < 17:
+                                sleep(2)
+                                hit(deck, dealer_hand)
+                        
+                            # Show all cards
+                            show_all(player_hand,dealer_hand)
+                            
+                            # Run different winning scenarios
+                            if dealer_hand.value > 21:
+                                Casino.bet_won(self, bet, 2)
+                                break
+
+                            elif dealer_hand.value > player_hand.value:
+                                Casino.bet_lost(self)
+                                break
+
+                            elif dealer_hand.value < player_hand.value:
+                                Casino.bet_won(self, bet, 2)
+                                break
+
+                            else:
+                                Casino.bet_won(self, bet, 1)
+                                break
+                    break
+
+            if choice == "2":
+                """
+                Blackjack rules.
+                The goal of the game is to get as close to 21 as possible without going over.
+                The game begins with two cards dealt to each player.
+                The player can then choose to either hit or stand.
+                If the player hits and exceeds 21, the player is bust and loses.
+                If the player stands, the dealer will take his turn.
+                The dealer will hit until his hand exceeds 17.
+                If the dealer busts, the player wins.
+                """
+            if choice == "3":
+                break
 
     def dices(self):
         """
